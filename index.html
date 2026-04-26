@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>حضور</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="حضور">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root,[data-theme="light"]{
+  --bg:#F0FDFF;--surface:#E0F9FF;--card:#FFFFFF;--border:#B8EEFA;--shadow:rgba(78,215,241,.12);
+  --c1:#4ED7F1;--c2:#6FE6FC;--c3:#A8F1FF;--c4:#FFFA8D;
+  --green:#16A34A;--green-dim:rgba(22,163,74,.12);
+  --red:#DC2626;--red-dim:rgba(220,38,38,.12);
+  --blue:#2563EB;--blue-dim:rgba(37,99,235,.12);
+  --orange:#EA580C;--orange-dim:rgba(234,88,12,.12);
+  --text:#0D3B47;--text-muted:#4A7A87;--text-dim:#92BAC4;
+  --primary-fg:#0D3B47;--nav-bg:#FFFFFF;
+}
+[data-theme="dark"]{
+  --bg:#061C24;--surface:#0A2A35;--card:#0F3A47;--border:#1A5065;--shadow:rgba(0,0,0,.3);
+  --c1:#4ED7F1;--c2:#6FE6FC;--c3:#A8F1FF;--c4:#FFFA8D;
+  --green:#4ADE80;--green-dim:rgba(74,222,128,.13);
+  --red:#F87171;--red-dim:rgba(248,113,113,.13);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,.13);
+  --orange:#FB923C;--orange-dim:rgba(251,146,60,.13);
+  --text:#E0FDFF;--text-muted:#6ABCD0;--text-dim:#2A5C6A;
+  --primary-fg:#061C24;--nav-bg:#0F3A47;
+}
+html,body{height:100%;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;direction:rtl;transition:background .3s,color .3s}
+#app{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.safe-top{height:env(safe-area-inset-top,0px);background:var(--bg)}
+.main-content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:72px}
+/* HEADER */
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 8px}
+.hd-left h1{font-size:20px;font-weight:900;color:var(--c1)}
+.hd-left p{font-size:10px;color:var(--text-dim);margin-top:1px}
+.theme-btn{width:38px;height:38px;background:var(--card);border:1.5px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 2px 8px var(--shadow);transition:transform .15s}
+.theme-btn:active{transform:scale(.9)}
+/* NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:58px;padding-bottom:env(safe-area-inset-bottom,0px);background:var(--nav-bg);border-top:1.5px solid var(--border);display:flex;z-index:100;box-shadow:0 -4px 20px var(--shadow)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--text-dim);cursor:pointer;font-family:'Cairo',sans-serif;font-size:10px;font-weight:700;padding:0;transition:color .2s}
+.nav-btn.active{color:var(--c1)}
+.nav-btn svg{width:20px;height:20px}
+.nav-pip{width:5px;height:5px;border-radius:50%;background:var(--c1);opacity:0;transition:opacity .2s;margin-top:1px}
+.nav-btn.active .nav-pip{opacity:1}
+/* SCREENS */
+.screen{display:none}.screen.active{display:block}
+.home-screen{display:flex;flex-direction:column;align-items:center;padding:10px 16px 20px}
+/* CLOCK */
+.clock-wrap{width:100%;background:var(--card);border-radius:24px;padding:20px 16px 16px;border:1.5px solid var(--border);box-shadow:0 4px 20px var(--shadow);text-align:center;margin-bottom:10px}
+.clock-el{font-family:'Space Mono',monospace;font-size:clamp(64px,20vw,100px);font-weight:700;letter-spacing:-3px;color:var(--c1);line-height:1;margin-bottom:6px}
+.date-el{font-size:13px;color:var(--text-muted);font-weight:700}
+/* BADGE */
+.win-badge{display:inline-flex;align-items:center;gap:6px;background:var(--c3);border-radius:20px;padding:6px 14px;font-size:11px;color:var(--text);margin-bottom:10px;font-weight:800;border:1px solid var(--border)}
+/* STATUS */
+.status-card{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:18px;padding:14px 16px;margin:6px 0 10px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px var(--shadow)}
+.s-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.s-icon.cyan{background:rgba(78,215,241,.15)}.s-icon.blue{background:var(--blue-dim)}.s-icon.green{background:var(--green-dim)}
+.s-text h3{font-size:15px;font-weight:800;margin-bottom:2px}
+.s-text p{font-size:12px;color:var(--text-muted);font-weight:600}
+/* CHIPS */
+.chips{display:flex;gap:8px;width:100%;margin-bottom:10px}
+.chip{flex:1;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;box-shadow:0 2px 8px var(--shadow);transition:border-color .2s}
+.chip:active{border-color:var(--c1)}
+.chip-lbl{font-size:10px;color:var(--text-dim);font-weight:700;margin-bottom:4px}
+.chip-val{font-family:'Space Mono',monospace;font-size:18px;color:var(--text);font-weight:700}
+.chip-hint{font-size:9px;color:var(--c1);margin-top:2px;font-weight:700}
+/* COUNTDOWN */
+.cntd-wrap{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:20px 16px;text-align:center;margin-bottom:10px;box-shadow:0 4px 16px var(--shadow);position:relative;overflow:hidden}
+.cntd-wrap::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4))}
+.cntd-lbl{font-size:10px;color:var(--text-dim);letter-spacing:2px;font-weight:800;margin-bottom:8px}
+.cntd-el{font-family:'Space Mono',monospace;font-size:clamp(52px,16vw,80px);font-weight:700;letter-spacing:-2px;color:var(--c1);line-height:1;margin-bottom:6px;transition:color .4s}
+.cntd-el.warn{color:var(--orange)}.cntd-el.done{color:var(--green)}
+.cntd-sub{font-size:12px;color:var(--text-muted);font-weight:600}
+.prog-bar{width:100%;height:6px;background:var(--surface);border-radius:3px;margin-top:14px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--c1),var(--c4));transition:width .8s ease}
+/* BUTTONS */
+.btn{width:100%;padding:16px;border:none;border-radius:16px;font-family:'Cairo',sans-serif;font-size:17px;font-weight:800;cursor:pointer;transition:transform .1s;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--c1);color:var(--primary-fg);box-shadow:0 4px 20px rgba(78,215,241,.35)}
+.btn-ghost{background:var(--card);color:var(--text-muted);border:1.5px solid var(--border)}
+.btn-blue{background:var(--blue-dim);color:var(--blue);border:1.5px solid rgba(37,99,235,.25)}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 4px 16px rgba(220,38,38,.25)}
+@keyframes pulse-c{0%,100%{box-shadow:0 4px 20px rgba(78,215,241,.35)}50%{box-shadow:0 4px 40px rgba(78,215,241,.6),0 0 60px rgba(78,215,241,.2)}}
+.pulse{animation:pulse-c 2s infinite}
+/* WEEKEND */
+.weekend-wrap{text-align:center;padding:28px 20px;width:100%}
+.weekend-wrap .wi{font-size:60px;margin-bottom:14px}
+.weekend-wrap h2{font-size:22px;font-weight:900;margin-bottom:8px;color:var(--c1)}
+.weekend-wrap p{font-size:14px;color:var(--text-muted);line-height:2;font-weight:600}
+/* REMINDER */
+.reminder{width:100%;background:rgba(255,250,141,.2);border:1.5px solid rgba(255,250,141,.5);border-radius:14px;padding:13px 15px;margin-bottom:9px;display:flex;align-items:center;gap:11px}
+.reminder .ri{font-size:20px;flex-shrink:0}
+.reminder .rt{flex:1}
+.reminder .rt h4{font-size:13px;font-weight:800;color:#7A6F00}
+[data-theme="dark"] .reminder .rt h4{color:var(--c4)}
+.reminder .rt p{font-size:11px;color:var(--text-muted);font-weight:600}
+.ack-btn{background:var(--c4);border:none;color:#5A5500;border-radius:9px;padding:8px 12px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0}
+/* MONTH BAR */
+.mo-bar{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:9px;box-shadow:0 2px 8px var(--shadow)}
+.mo-bar-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px}
+.mo-bar-lbl{color:var(--text-muted);font-weight:700}
+.mo-bar-val{color:var(--text);font-weight:800}
+.mo-prog{width:100%;height:5px;background:var(--surface);border-radius:3px;overflow:hidden}
+.mo-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--c1),var(--c2));transition:width .5s}
+.mo-fill.danger{background:linear-gradient(90deg,var(--orange),var(--red))}
+/* DAY DONE */
+.done-card{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:22px;padding:22px 18px;text-align:center;margin-bottom:10px;box-shadow:0 4px 16px var(--shadow)}
+.done-icon{width:70px;height:70px;border-radius:20px;background:var(--green-dim);display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 13px}
+.done-title{font-size:20px;font-weight:900;margin-bottom:3px}
+.done-sub{font-size:12px;color:var(--text-muted);margin-bottom:14px;font-weight:600}
+.divider{height:1px;background:var(--border);margin:10px 0}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{color:var(--text-muted);font-weight:700}
+.stat-val{font-weight:800;font-family:'Space Mono',monospace;font-size:12px;display:flex;align-items:center;gap:6px}
+.edit-tag{font-size:11px;color:var(--c1);cursor:pointer;font-family:'Cairo',sans-serif;background:rgba(78,215,241,.12);padding:2px 8px;border-radius:6px;border:1px solid rgba(78,215,241,.3)}
+/* BEFORE */
+.before-wrap{text-align:center;padding:28px 20px;width:100%}
+.before-wrap .bi{font-size:56px;margin-bottom:12px}
+.before-wrap h2{font-size:19px;font-weight:900;margin-bottom:8px}
+.before-wrap p{font-size:13px;color:var(--text-muted);line-height:2;font-weight:600}
+/* PERMS & HIST */
+.perms-screen,.hist-screen{padding:16px}
+.screen-title{font-size:19px;font-weight:900;margin-bottom:12px}
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:10px 14px;box-shadow:0 2px 8px var(--shadow)}
+.mnav-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:17px;padding:4px 10px;border-radius:8px}
+.mnav-title{font-size:15px;font-weight:800}
+.perm-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 15px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px var(--shadow)}
+.perm-card:active{border-color:var(--c1)}
+.pci{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pci.late{background:var(--blue-dim)}.pci.dep{background:var(--orange-dim)}
+.pci-info{flex:1}
+.pci-date{font-size:13px;font-weight:800;margin-bottom:2px}
+.pci-type{font-size:11px;font-weight:800;margin-bottom:2px}
+.pci-type.late{color:var(--blue)}.pci-type.dep{color:var(--orange)}
+.pci-note,.pci-status{font-size:11px;color:var(--text-muted);font-weight:600}
+.pci-status.ok{color:var(--green)}.pci-status.warn{color:var(--orange)}
+.pci-dur{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;white-space:nowrap}
+.no-items{text-align:center;padding:40px 20px;color:var(--text-dim)}
+.no-items .ni{font-size:40px;margin-bottom:10px}
+.no-items p{font-size:13px;font-weight:600}
+/* CALENDAR */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px}
+.cal-dh{text-align:center;font-size:10px;color:var(--text-dim);padding:4px 0;font-weight:800}
+.cal-dh.wknd{color:var(--red);opacity:.6}
+.cal-d{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;font-size:12px;font-weight:700;position:relative;color:var(--text-dim);cursor:pointer;transition:opacity .15s}
+.cal-d:active{opacity:.7}
+.cal-d.today{background:var(--c3);color:var(--text);border:2px solid var(--c1)}
+.cal-d.full{background:var(--green-dim);color:var(--green)}
+.cal-d.hasperm{background:var(--blue-dim);color:var(--blue)}
+.cal-d.hasr{background:var(--surface);color:var(--text)}
+.cal-d.wknd-d{opacity:.2;cursor:default;pointer-events:none}
+.cal-d.wknd-d.today{opacity:.6}
+.cal-dot{width:4px;height:4px;border-radius:50%;position:absolute;bottom:3px}
+.cal-dot.g{background:var(--green)}.cal-dot.b{background:var(--blue)}
+.sec-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.sec-lbl{font-size:12px;font-weight:800;color:var(--text-muted);letter-spacing:1px}
+.export-btn{display:flex;align-items:center;gap:5px;background:var(--green-dim);border:1.5px solid rgba(22,163,74,.25);color:var(--green);border-radius:9px;padding:7px 12px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;cursor:pointer}
+.tbl-wrap{background:var(--card);border:1.5px solid var(--border);border-radius:13px;overflow:hidden;overflow-x:auto;margin-bottom:20px;box-shadow:0 2px 8px var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:right;padding:10px 12px;color:var(--text-dim);font-weight:800;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-muted);vertical-align:middle;cursor:pointer;font-weight:600}
+tr:last-child td{border-bottom:none}
+.dc{color:var(--text)!important;font-weight:800!important}
+.tc{font-family:'Space Mono',monospace!important;color:var(--text)!important}
+.pb{display:inline-block;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:800}
+.pb.l{background:var(--blue-dim);color:var(--blue)}.pb.d{background:var(--orange-dim);color:var(--orange)}
+/* MODALS */
+.ov{position:fixed;inset:0;background:rgba(6,28,36,.55);backdrop-filter:blur(12px);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:12px}
+[data-theme="light"] .ov{background:rgba(13,59,71,.3)}
+.ov.hidden{display:none}
+.sheet{background:var(--card);border:1.5px solid var(--border);border-radius:26px 26px 20px 20px;width:100%;max-width:480px;padding:20px 20px 32px;max-height:88dvh;overflow-y:auto;box-shadow:0 -8px 32px var(--shadow)}
+.handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.mtitle{font-size:18px;font-weight:900;margin-bottom:4px}
+.msub{font-size:12px;color:var(--text-muted);margin-bottom:16px;font-weight:600}
+.minfo{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-radius:12px;padding:12px 15px;margin-bottom:9px;font-size:13px}
+.minfo-lbl{color:var(--text-muted);font-weight:700}
+.minfo-val{font-weight:800;font-family:'Space Mono',monospace;font-size:12px}
+textarea,.tinp{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Cairo',sans-serif;font-size:14px;resize:none;margin-bottom:12px;outline:none;direction:rtl;font-weight:600}
+textarea{height:80px}
+.tinp{height:50px;font-size:18px;direction:ltr;text-align:center;font-family:'Space Mono',monospace}
+textarea::placeholder,.tinp::placeholder{color:var(--text-dim)}
+textarea:focus,.tinp:focus{border-color:var(--c1);box-shadow:0 0 0 3px rgba(78,215,241,.15)}
+.flbl{font-size:12px;color:var(--text-muted);font-weight:800;margin-bottom:6px}
+.erow{display:flex;gap:10px}
+.ecol{flex:1}
+.selinp{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-family:'Cairo',sans-serif;font-size:14px;outline:none;margin-bottom:12px;font-weight:600}
+.selinp:focus{border-color:var(--c1)}
+/* QTE */
+.qte-ov{position:fixed;inset:0;background:rgba(6,28,36,.55);backdrop-filter:blur(14px);z-index:250;display:flex;align-items:center;justify-content:center;padding:24px}
+[data-theme="light"] .qte-ov{background:rgba(13,59,71,.3)}
+.qte-ov.hidden{display:none}
+.qte-box{background:var(--card);border:1.5px solid var(--border);border-radius:24px;padding:26px 22px;width:100%;max-width:320px;text-align:center;box-shadow:0 8px 32px var(--shadow)}
+.qte-title{font-size:17px;font-weight:900;margin-bottom:5px}
+.qte-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;font-weight:600}
+.qte-inp{width:100%;background:var(--surface);border:2px solid var(--c1);border-radius:14px;padding:14px;font-size:28px;font-family:'Space Mono',monospace;color:var(--text);text-align:center;direction:ltr;outline:none;margin-bottom:16px;box-shadow:0 0 0 4px rgba(78,215,241,.1)}
+.qte-btns{display:flex;gap:10px}
+.qte-btns .btn{margin-bottom:0;flex:1;padding:14px}
+/* CONFIRM */
+.conf-ov{position:fixed;inset:0;background:rgba(6,28,36,.88);backdrop-filter:blur(18px);z-index:300;display:flex;align-items:center;justify-content:center;padding:28px;opacity:0;pointer-events:none;transition:opacity .3s}
+[data-theme="light"] .conf-ov{background:rgba(13,59,71,.65)}
+.conf-ov.show{opacity:1;pointer-events:all}
+.conf-ov.hidden{display:none}
+.conf-box{background:var(--card);border:1.5px solid var(--border);border-radius:28px;padding:36px 26px;text-align:center;width:100%;max-width:360px;transform:scale(.88);transition:transform .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 16px 48px var(--shadow)}
+.conf-ov.show .conf-box{transform:scale(1)}
+.conf-emoji{font-size:66px;display:block;margin-bottom:16px}
+@keyframes bounce{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.conf-ov.show .conf-emoji{animation:bounce .5s ease .05s both}
+.conf-title{font-size:21px;font-weight:900;margin-bottom:10px}
+.conf-body{font-size:14px;color:var(--text-muted);line-height:2;margin-bottom:26px;font-weight:600}
+.conf-dismiss{background:var(--c1);border:none;color:var(--primary-fg);border-radius:50px;padding:13px 40px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(78,215,241,.3)}
+.conf-dismiss:active{transform:scale(.97)}
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-90px);background:var(--card);border:1.5px solid var(--c1);color:var(--text);padding:10px 22px;border-radius:50px;font-size:13px;font-weight:800;z-index:400;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 4px 16px rgba(78,215,241,.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.ani{animation:fadeUp .28s ease both}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="safe-top"></div>
+  <div class="app-header">
+    <div class="hd-left"><h1>◉ حضور</h1><p>نظام تسجيل الدوام</p></div>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
+  </div>
+  <div class="main-content">
+    <div id="screen-home" class="screen active"><div class="home-screen" id="hc"></div></div>
+    <div id="screen-perms" class="screen perms-screen">
+      <div class="screen-title">سجل الإذونات</div>
+      <div class="month-nav">
+        <button class="mnav-btn" onclick="pprev()">&#10094;</button>
+        <div class="mnav-title" id="pm-title">—</div>
+        <button class="mnav-btn" onclick="pnext()">&#10095;</button>
+      </div>
+      <div id="pm-bar" class="mo-bar" style="display:none">
+        <div class="mo-bar-hd"><span class="mo-bar-lbl">المجموع الشهري</span><span class="mo-bar-val" id="pm-val">—</span></div>
+        <div class="mo-prog"><div class="mo-fill" id="pm-fill" style="width:0%"></div></div>
+      </div>
+      <div id="perm-list"></div>
+    </div>
+    <div id="screen-hist" class="screen hist-screen">
+      <div class="screen-title">السجل والتقارير</div>
+      <div class="month-nav">
+        <button class="mnav-btn" onclick="hprev()">&#10094;</button>
+        <div class="mnav-title" id="hm-title">—</div>
+        <button class="mnav-btn" onclick="hnext()">&#10095;</button>
+      </div>
+      <div id="cal-grid" class="cal-grid"></div>
+      <div class="sec-hd">
+        <div class="sec-lbl">سجل الأيام</div>
+        <button class="export-btn" onclick="exportExcel()">📊 Excel</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>التاريخ</th><th>دخول</th><th>خروج</th><th>المدة</th><th>إذن</th></tr></thead>
+          <tbody id="hist-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="tabHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      الرئيسية<div class="nav-pip"></div>
+    </button>
+    <button class="nav-btn" id="nav-perms" onclick="tabPerms()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      الإذونات<div class="nav-pip"></div>
+    </button>
+    <button class="nav-btn" id="nav-hist" onclick="tabHist()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      السجل<div class="nav-pip"></div>
+    </button>
+  </nav>
+  <!-- ACTION MODAL -->
+  <div id="act-ov" class="ov hidden" onclick="if(event.target===this)closeAct()">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div id="act-title" class="mtitle"></div>
+      <div id="act-sub" class="msub"></div>
+      <div id="act-rows"></div>
+      <textarea id="act-note" placeholder="أضف ملاحظة أو سبب الإذن..."></textarea>
+      <button class="btn btn-primary" id="act-ok" onclick="confirmAct()">تأكيد</button>
+      <button class="btn btn-ghost" onclick="closeAct()">إلغاء</button>
+    </div>
+  </div>
+  <!-- EDIT DAY MODAL -->
+  <div id="edit-ov" class="ov hidden" onclick="if(event.target===this)closeEdit()">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div id="edit-title" class="mtitle">تعديل اليوم</div>
+      <div id="edit-sub" class="msub"></div>
+      <div class="erow">
+        <div class="ecol"><div class="flbl">⏰ وقت الدخول</div><input type="time" id="edit-ci" class="tinp"></div>
+        <div class="ecol"><div class="flbl">🏠 وقت الخروج</div><input type="time" id="edit-co" class="tinp"></div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="flbl">📋 نوع الإذن</div>
+      <select id="edit-pt" class="selinp" onchange="onPtChange()">
+        <option value="">— بدون إذن —</option>
+        <option value="late">إذن حضور متأخر</option>
+        <option value="dep">إذن انصراف</option>
+      </select>
+      <div id="edit-pf" style="display:none">
+        <div class="flbl">⏱️ مدة الإذن (دقيقة)</div>
+        <input type="number" id="edit-pdur" class="tinp" placeholder="60" min="1" max="420" style="margin-bottom:10px">
+        <div class="flbl">💬 ملاحظة</div>
+        <textarea id="edit-pnote" placeholder="سبب الإذن..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveEdit()">💾 حفظ التعديلات</button>
+      <button class="btn btn-ghost" style="color:var(--red);border-color:var(--red-dim)" onclick="delDay()">🗑️ حذف اليوم</button>
+      <button class="btn btn-ghost" onclick="closeEdit()">إلغاء</button>
+    </div>
+  </div>
+  <!-- QUICK TIME EDIT -->
+  <div id="qte-ov" class="qte-ov hidden" onclick="if(event.target===this)closeQTE()">
+    <div class="qte-box">
+      <div id="qte-title" class="qte-title">تعديل الوقت</div>
+      <div id="qte-sub" class="qte-sub">أدخل الوقت الصحيح</div>
+      <input type="time" id="qte-inp" class="qte-inp">
+      <div class="qte-btns">
+        <button class="btn btn-primary" onclick="saveQTE()">حفظ ✓</button>
+        <button class="btn btn-ghost" onclick="closeQTE()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+  <!-- CONFIRMATION -->
+  <div id="conf-ov" class="conf-ov hidden">
+    <div class="conf-box">
+      <span id="conf-e" class="conf-emoji">✅</span>
+      <div id="conf-t" class="conf-title">تم!</div>
+      <div id="conf-b" class="conf-body"></div>
+      <button class="conf-dismiss" onclick="closeConf()">تمام 👍</button>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+</div>
+<script>
+// ═══════════════════ MESSAGES ═══════════════════
+var MSGS = {
+  checkIn:[
+    {e:"🌟",t:"أهلاً بك يا بطل!",b:"يوم جديد، فرصة جديدة. اجعله استثنائياً 💪"},
+    {e:"⚡",t:"الساعة تبدأ الآن!",b:"كل دقيقة تُحتسب. تحرك بثقة وثبات 🚀"},
+    {e:"🎯",t:"مرحباً بالمتميز!",b:"الالتزام أول خطوة للنجاح. أنت على الطريق الصح ✨"},
+    {e:"🌅",t:"يوم مبارك عليك!",b:"النية الصادقة تحوّل العمل لعبادة. بالتوفيق 🤲"},
+    {e:"🔥",t:"هيا بنا!",b:"المحترفون لا ينتظرون الإلهام، يذهبون لصنعه 💡"},
+    {e:"👑",t:"أنت هنا، هذا يكفي!",b:"الحضور المنتظم هو سر المنجزين الكبار 🏆"},
+    {e:"🌈",t:"صباح الإنجاز!",b:"ابدأ بهدوء، واستمر بثبات، والنتائج ستبهرك 🌟"},
+    {e:"💼",t:"وقت العمل!",b:"قليل مستمر خير من كثير متقطع. ابدأ الآن ⏰"},
+    {e:"🏃",t:"على الطريق!",b:"ابدأ يومك بخطوة، وسيتبعها ألف خطوة 🌍"},
+    {e:"💎",t:"الحضور هو الأساس",b:"أنت تبني مستقبلك يوماً بيوم. استمر 🏗️"},
+    {e:"🦅",t:"حلّق عالياً!",b:"أرقامك في النظام محفوظة. ابدأ بنجاح 📈"},
+    {e:"☕",t:"مستعد للعطاء!",b:"يوم آخر من التميز يبدأ. دائماً الأفضل 🌿"}
+  ],
+  lateCI:[
+    {e:"😌",t:"لا بأس، المهم الحضور!",b:"سُجّل إذنك تلقائياً. الوصول خير من الغياب 💚"},
+    {e:"🤝",t:"مرحباً بك!",b:"الإذن محسوب. ركّز وأنجز ما بقي من يومك ⚡"},
+    {e:"🌤️",t:"جاء وقتك!",b:"تأخرت قليلاً لكنك حاضر. هذا هو الفرق 💪"},
+    {e:"📋",t:"تم التسجيل!",b:"الإذن مُسجَّل. استغل ما تبقى بجدية 🎯"},
+    {e:"🔄",t:"كل يوم فرصة!",b:"لا تحاسب نفسك كثيراً، ابدأ من حيث أنت 🌱"}
+  ],
+  permission:[
+    {e:"✅",t:"تم تسجيل الإذن!",b:"كل شيء مُحتسب بدقة. اطمئن وتوجّه برفاهية 🕊️"},
+    {e:"🛡️",t:"الإذن محفوظ!",b:"الأولويات تتغير والنظام يتفهم ذلك. سلامتك أولاً 💚"},
+    {e:"💛",t:"كل شيء تمام!",b:"إذنك مُسجَّل. تذكر تسجيله في النظام الرسمي 📌"},
+    {e:"🌿",t:"لا تقلق أبداً!",b:"الوقت محتسب بعدل تام. استمتع بوقتك 🏡"},
+    {e:"⚖️",t:"تم الاحتساب!",b:"مدة الإذن مُسجَّلة. الراحة حق مشروع 🌙"},
+    {e:"🔋",t:"اشحن بطاريتك!",b:"راحتك تجعلك أكثر إنتاجاً. استمتع ⚡"},
+    {e:"☕",t:"خذ قسطاً!",b:"العقل المرتاح يعطي أضعاف الضغط المستمر 🧠"}
+  ],
+  checkOut:[
+    {e:"🎉",t:"يوم ناجح تماماً!",b:"أكملت 8 ساعات كاملة. أنت إنسان منضبط 🏆"},
+    {e:"🌟",t:"مبروك على يومك!",b:"الراحة تستحقها. اذهب واستمتع 💝"},
+    {e:"🏠",t:"يلا.. استرح!",b:"8 ساعات من العطاء. الآن وقتك وأهلك ❤️"},
+    {e:"📈",t:"أداء رائع!",b:"كل يوم تكتمله إضافة لمسيرتك 💪"},
+    {e:"👏",t:"يوم مكتمل!",b:"خرجت ورأسك مرفوع. هذا هو الفرق 🌈"},
+    {e:"⭐",t:"أنهيت الدوام!",b:"النجاح التراكمي يبدأ من يوم كهذا 🎯"},
+    {e:"🌙",t:"إلى اللقاء!",b:"استرح واشحن طاقتك، غداً يوم جديد 🌅"},
+    {e:"🥇",t:"بطل اليوم أنت!",b:"الثبات والانضباط يصنعان الأبطال 🦅"},
+    {e:"🎊",t:"ما شاء الله!",b:"يوم كامل من العطاء. بارك الله في وقتك 🤲"},
+    {e:"💫",t:"انتهى يومك!",b:"الوقت مستثمر والأجر محفوظ. أنت تستحق 💎"}
+  ],
+  thursdayOut:[
+    {e:"🎊",t:"نهاية أسبوع رائعة!",b:"أكملت أسبوعاً كاملاً بنجاح. عطلتك تستحق الاستمتاع 🌴"},
+    {e:"🥳",t:"مبروك على الأسبوع!",b:"خمسة أيام من الإنجاز والالتزام. أنت فعلاً متميز 🏆"},
+    {e:"🌅",t:"عطلة سعيدة!",b:"اشحن طاقتك، الأسبوع القادم ينتظرك 🚀"},
+    {e:"🎯",t:"أسبوع ناجح!",b:"العمل المتواصل يُبنى على مثل هذه الأسابيع 💪"},
+    {e:"🌟",t:"ختمت بامتياز!",b:"استرح يا بطل، الأحد ينتظرك بكل قوة 🦅"},
+    {e:"🏖️",t:"وقت الراحة!",b:"أسبوع كامل من العطاء — العطلة حق مكتسب 💛"},
+    {e:"✨",t:"أسبوعك رائع!",b:"كل خطوة تبني الشخص الناجح. إلى الأمام 🌈"}
+  ]
+};
+function rndMsg(type) {
+  var arr = (type === "checkOut" && new Date().getDay() === 4) ? MSGS.thursdayOut : MSGS[type];
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ═══════════════════ THEME ═══════════════════
+var dark = localStorage.getItem("hud_theme") === "dark";
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  document.getElementById("theme-btn").textContent = dark ? "☀️" : "🌙";
+  localStorage.setItem("hud_theme", dark ? "dark" : "light");
+}
+function toggleTheme() { dark = !dark; applyTheme(); }
+
+// ═══════════════════ STORAGE ═══════════════════
+var DB = "hudoor_v5";
+function gd() { try { return JSON.parse(localStorage.getItem(DB) || "[]"); } catch(e) { return []; } }
+function sd(d) { localStorage.setItem(DB, JSON.stringify(d)); }
+function p2(n) { return String(n).padStart(2, "0"); }
+function ld(d) { d = d || new Date(); return d.getFullYear() + "-" + p2(d.getMonth()+1) + "-" + p2(d.getDate()); }
+function lt(d) { d = d || new Date(); return p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+function gtr() { var t = ld(); return gd().find(function(r){ return r.date === t; }) || null; }
+function upr(rec) {
+  var data = gd(), idx = data.findIndex(function(r){ return r.date === rec.date; });
+  if (idx >= 0) data[idx] = rec; else data.unshift(rec);
+  sd(data);
+}
+function delR(date) { sd(gd().filter(function(r){ return r.date !== date; })); }
+var AM = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+var AD = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+
+// ═══════════════════ STATE ═══════════════════
+function isWknd(d) { d = d || new Date(); var day = d.getDay(); return day === 5 || day === 6; }
+function getState() {
+  var now = new Date(), tot = now.getHours()*60 + now.getMinutes(), t = gtr();
+  if (isWknd()) return "weekend";
+  if (t && (t.checkOut || t.permissionTaken)) return "day_done";
+  if (t && t.checkIn) {
+    var parts = t.checkIn.split(":"), elapsed = tot - (parseInt(parts[0])*60 + parseInt(parts[1]));
+    return elapsed >= 480 ? "departure_ready" : "working";
+  }
+  if (tot < 420) return "before_window";
+  if (tot <= 540) return "attendance_window";
+  return "late_window";
+}
+function fmtD(m) {
+  var h = Math.floor(Math.abs(m)/60), mn = Math.abs(m)%60;
+  return h === 0 ? (mn + " دق") : mn === 0 ? (h + "س") : (h + "س " + mn + "دق");
+}
+function mBetween(t1, t2) {
+  var p1 = t1.split(":"), p2 = t2.split(":");
+  return (parseInt(p2[0])*60 + parseInt(p2[1])) - (parseInt(p1[0])*60 + parseInt(p1[1]));
+}
+function addM(t, m) {
+  var p = t.split(":"), tot = parseInt(p[0])*60 + parseInt(p[1]) + m;
+  return p2(Math.floor(tot/60)%24) + ":" + p2(tot%60);
+}
+function gDate(d) {
+  d = d || new Date();
+  return AD[d.getDay()] + "، " + d.getDate() + " " + AM[d.getMonth()] + " " + d.getFullYear();
+}
+function monthPerms(yr, mo) {
+  var k = yr + "-" + p2(mo+1);
+  return gd().filter(function(r){ return r.date.indexOf(k) === 0; })
+    .reduce(function(s,r){ return s + (r.latePermission ? r.latePermission.duration : 0) + (r.departurePermission ? r.departurePermission.duration : 0); }, 0);
+}
+
+// ═══════════════════ CLOCK ═══════════════════
+var lastSt = null;
+function startClock() { tick(); setInterval(tick, 1000); }
+function tick() {
+  var now = new Date();
+  var el = document.getElementById("clock-el");
+  if (el) el.textContent = p2(now.getHours()) + ":" + p2(now.getMinutes());
+  var ce = document.getElementById("cntd-el");
+  if (ce) {
+    var t = gtr();
+    if (t && t.checkIn) {
+      var parts = t.checkIn.split(":"), elapsed = now.getHours()*60 + now.getMinutes() - (parseInt(parts[0])*60 + parseInt(parts[1])), rem = Math.max(0, 480-elapsed);
+      ce.textContent = Math.floor(rem/60) + ":" + p2(rem%60);
+      ce.className = "cntd-el" + (rem <= 60 ? " warn" : "") + (rem === 0 ? " done" : "");
+      var pf = document.getElementById("prog-fill");
+      if (pf) pf.style.width = Math.min(100, (elapsed/480)*100) + "%";
+    }
+  }
+  var st = getState();
+  if (st !== lastSt) { lastSt = st; renderHome(); }
+}
+
+// ═══════════════════ RENDER HOME ═══════════════════
+function renderHome() {
+  var state = getState(), t = gtr(), c = document.getElementById("hc");
+  var h = '<div class="clock-wrap ani"><div class="clock-el" id="clock-el">' + lt() + '</div><div class="date-el">' + gDate() + '</div></div>';
+
+  if (t) {
+    var p = t.latePermission || t.departurePermission;
+    if (p && !p.acknowledged) {
+      h += '<div class="reminder ani"><div class="ri">🔔</div><div class="rt"><h4>سجّل الإذن رسمياً في النظام</h4><p>مدة الإذن: ' + fmtD(p.duration) + ' — اضغط بعد التسجيل</p></div><button class="ack-btn" onclick="ackPerm()">تم ✓</button></div>';
+    }
+  }
+
+  if (state === "weekend") {
+    var isFri = new Date().getDay() === 5;
+    h += '<div class="weekend-wrap ani"><div class="wi">' + (isFri ? "🕌" : "🌴") + '</div><h2>' + (isFri ? "جمعة مباركة!" : "يوم سبت سعيد!") + '</h2><p>' + (isFri ? "استرح واستمتع بعطلتك<br>لا دوام اليوم — يوم مبارك ✨" : "يوم آخر من العطلة<br>شحّن طاقتك، الأحد يبدأ الأسبوع 🚀") + '</p></div>';
+  } else if (state === "before_window") {
+    h += '<div class="win-badge">📅 نافذة الحضور من 7:00 إلى 9:00 صباحاً</div><div class="before-wrap ani"><div class="bi">🌙</div><h2>ما زال مبكراً</h2><p>نافذة تسجيل الحضور<br>من <strong>7:00</strong> إلى <strong>9:00</strong> صباحاً</p></div>';
+  } else if (state === "attendance_window") {
+    h += '<div class="win-badge">🟢 نافذة الحضور مفتوحة حتى 9:00</div><div class="status-card ani"><div class="s-icon cyan">☀️</div><div class="s-text"><h3>صباح الخير!</h3><p>سجّل حضورك لبدء يومك</p></div></div><button class="btn btn-primary pulse ani" onclick="doCI()"><span>👆</span><span>تسجيل الحضور</span></button>';
+  } else if (state === "late_window") {
+    var now2 = new Date(), dur0 = now2.getHours()*60 + now2.getMinutes() - 420;
+    h += '<div class="status-card ani" style="border-color:rgba(37,99,235,.3)"><div class="s-icon blue">⏰</div><div class="s-text"><h3>تجاوزت نافذة الحضور</h3><p>التأخير: ' + fmtD(dur0) + ' عن 7:00 صباحاً</p></div></div><button class="btn btn-primary ani" onclick="doCI2()"><span>👆</span><span>تسجيل الحضور</span></button>';
+  } else if (state === "working" || state === "departure_ready") {
+    var now3 = new Date(), tot3 = now3.getHours()*60 + now3.getMinutes();
+    var parts3 = t.checkIn.split(":"), el3 = tot3 - (parseInt(parts3[0])*60 + parseInt(parts3[1])), rem3 = Math.max(0, 480-el3), pct3 = Math.min(100,(el3/480)*100), eOut = addM(t.checkIn, 480);
+    h += '<div class="chips ani"><div class="chip" onclick="qteCI()"><div class="chip-lbl">⏰ وقت الدخول</div><div class="chip-val">' + t.checkIn + '</div><div class="chip-hint">✏️ اضغط للتعديل</div></div><div class="chip"><div class="chip-lbl">🏁 انتهاء الدوام</div><div class="chip-val">' + eOut + '</div></div></div>';
+    h += '<div class="cntd-wrap ani"><div class="cntd-lbl">المتبقي على انتهاء الدوام</div><div class="cntd-el' + (rem3<=60?" warn":"") + (rem3===0?" done":"") + '" id="cntd-el">' + Math.floor(rem3/60) + ":" + p2(rem3%60) + '</div><div class="cntd-sub">' + (rem3===0 ? "اكتملت ساعات الدوام ✓" : fmtD(el3) + " منجزة من أصل 8 ساعات") + '</div><div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:' + pct3 + '%"></div></div></div>';
+    if (!t.departurePermission && state === "working") {
+      h += '<button class="btn btn-blue ani" onclick="doDepPerm()"><span>📝</span><span>طلب إذن انصراف</span></button>';
+    }
+    if (state === "departure_ready") {
+      h += '<button class="btn btn-red ani" onclick="doCO()"><span>🏠</span><span>تسجيل الانصراف</span></button>';
+    }
+    var mp = monthPerms(new Date().getFullYear(), new Date().getMonth());
+    if (mp > 0) {
+      var pp = Math.min(100, (mp/420)*100);
+      h += '<div class="mo-bar ani"><div class="mo-bar-hd"><span class="mo-bar-lbl">إذونات هذا الشهر</span><span class="mo-bar-val">' + fmtD(mp) + ' / 7 ساعات</span></div><div class="mo-prog"><div class="mo-fill' + (pp>=80?" danger":"") + '" style="width:' + pp + '%"></div></div></div>';
+    }
+  } else if (state === "day_done") {
+    var p2r = t.departurePermission || t.latePermission;
+    var dur2 = "—";
+    if (t.checkIn && t.checkOut) dur2 = fmtD(mBetween(t.checkIn, t.checkOut));
+    else if (t.checkIn && t.permissionTaken) dur2 = "8 ساعات (شاملة الإذن)";
+    h += '<div class="done-card ani"><div class="done-icon">✅</div><div class="done-title">اليوم مكتمل 🎉</div><div class="done-sub">عمل رائع يا بطل!</div><div class="divider"></div>';
+    h += '<div class="stat-row"><span class="stat-lbl">وقت الدخول</span><span class="stat-val"><span class="edit-tag" onclick="qteCI()">✏️ تعديل</span>' + (t.checkIn || "—") + '</span></div>';
+    h += '<div class="stat-row"><span class="stat-lbl">وقت الخروج</span><span class="stat-val"><span class="edit-tag" onclick="qteCO()">✏️ تعديل</span>' + (t.permissionTaken && !t.checkOut ? "إذن انصراف" : t.checkOut || "—") + '</span></div>';
+    h += '<div class="stat-row"><span class="stat-lbl">مدة الدوام</span><span class="stat-val" style="color:var(--c1)">' + dur2 + '</span></div>';
+    if (p2r) h += '<div class="stat-row"><span class="stat-lbl">مدة الإذن</span><span class="stat-val" style="color:var(--blue)">' + fmtD(p2r.duration) + '</span></div>';
+    h += '</div><button class="btn btn-ghost ani" onclick="tabHist()"><span>📅</span><span>عرض السجل</span></button>';
+  }
+  c.innerHTML = h;
+}
+
+// ═══════════════════ QUICK TIME EDIT ═══════════════════
+var qteField = null;
+function openQTE(field) {
+  var t = gtr();
+  if (!t) { showToast("لا يوجد تسجيل اليوم"); return; }
+  qteField = field;
+  document.getElementById("qte-title").textContent = field === "ci" ? "تعديل وقت الدخول" : "تعديل وقت الخروج";
+  document.getElementById("qte-sub").textContent = field === "ci" ? "عدّل وقت دخولك الفعلي" : "عدّل وقت خروجك الفعلي";
+  document.getElementById("qte-inp").value = (field === "ci" ? t.checkIn : t.checkOut) || "";
+  document.getElementById("qte-ov").classList.remove("hidden");
+  setTimeout(function(){ var inp = document.getElementById("qte-inp"); if (inp) inp.focus(); }, 150);
+}
+function closeQTE() { document.getElementById("qte-ov").classList.add("hidden"); qteField = null; }
+function saveQTE() {
+  var val = document.getElementById("qte-inp").value;
+  if (!val) { showToast("أدخل الوقت أولاً"); return; }
+  var t = gtr();
+  if (!t) { closeQTE(); return; }
+  if (qteField === "ci") {
+    t.checkIn = val;
+    if (t.latePermission) {
+      var parts = val.split(":"), dur = parseInt(parts[0])*60 + parseInt(parts[1]) - 420;
+      t.latePermission.duration = Math.max(0, dur);
+    }
+  } else if (qteField === "co") {
+    t.checkOut = val;
+  }
+  upr(t); closeQTE(); lastSt = null; showToast("تم التعديل ✓"); renderHome();
+}
+
+// ═══════════════════ ACTIONS ═══════════════════
+function doCI() {
+  upr({date:ld(), checkIn:lt(), checkOut:null, latePermission:null, departurePermission:null, permissionTaken:false});
+  lastSt = null; renderHome(); showConf("checkIn");
+}
+function doCI2() {
+  var now = new Date(), time = lt(), dur = now.getHours()*60 + now.getMinutes() - 420;
+  showAct({
+    title:"تسجيل الحضور",
+    sub:"وقت الوصول: " + time + " — سيُسجَّل إذن تأخير تلقائياً",
+    rows:'<div class="minfo"><span class="minfo-lbl">من</span><span class="minfo-val">07:00</span></div><div class="minfo"><span class="minfo-lbl">إلى</span><span class="minfo-val">' + time + '</span></div><div class="minfo" style="background:rgba(78,215,241,.1);border:1px solid rgba(78,215,241,.3)"><span class="minfo-lbl">مدة الإذن</span><span class="minfo-val" style="color:var(--c1)">' + fmtD(dur) + '</span></div>',
+    ok:"تسجيل الحضور مع الإذن",
+    cb:function(note){
+      upr({date:ld(), checkIn:time, checkOut:null, latePermission:{duration:dur,note:note,acknowledged:false}, departurePermission:null, permissionTaken:false});
+      lastSt = null; renderHome(); showConf("lateCI");
+    }
+  });
+}
+function doDepPerm() {
+  var t = gtr(); if (!t || !t.checkIn) return;
+  var now = new Date(), time = lt(), parts = t.checkIn.split(":"), elapsed = now.getHours()*60 + now.getMinutes() - (parseInt(parts[0])*60+parseInt(parts[1])), rem = Math.max(0,480-elapsed);
+  showAct({
+    title:"إذن انصراف", sub:"يُحتسب الإذن من الآن حتى نهاية الدوام",
+    rows:'<div class="minfo"><span class="minfo-lbl">وقت الطلب</span><span class="minfo-val">' + time + '</span></div><div class="minfo"><span class="minfo-lbl">عمل فعلي</span><span class="minfo-val">' + fmtD(elapsed) + '</span></div><div class="minfo" style="background:rgba(255,250,141,.15);border:1px solid rgba(255,250,141,.4)"><span class="minfo-lbl">مدة الإذن</span><span class="minfo-val" style="color:#7A6F00">' + fmtD(rem) + '</span></div>',
+    ok:"تأكيد إذن الانصراف",
+    cb:function(note){
+      var rec = gtr();
+      rec.departurePermission = {duration:rem, takenAt:time, note:note, acknowledged:false};
+      rec.permissionTaken = true; rec.checkOut = time;
+      upr(rec); lastSt = null; renderHome(); showConf("permission");
+    }
+  });
+}
+function doCO() {
+  var rec = gtr(); if (!rec) return;
+  rec.checkOut = lt(); upr(rec); lastSt = null; renderHome(); showConf("checkOut");
+}
+function ackPerm() {
+  var rec = gtr(); if (!rec) return;
+  if (rec.latePermission) rec.latePermission.acknowledged = true;
+  if (rec.departurePermission) rec.departurePermission.acknowledged = true;
+  upr(rec); showToast("تم التأكيد ✓"); renderHome();
+}
+
+// ═══════════════════ ACTION MODAL ═══════════════════
+var actCB = null;
+function showAct(cfg) {
+  document.getElementById("act-title").textContent = cfg.title;
+  document.getElementById("act-sub").textContent = cfg.sub;
+  document.getElementById("act-rows").innerHTML = cfg.rows || "";
+  document.getElementById("act-note").value = "";
+  document.getElementById("act-ok").textContent = cfg.ok || "تأكيد";
+  document.getElementById("act-ov").classList.remove("hidden");
+  actCB = cfg.cb;
+}
+function closeAct() { document.getElementById("act-ov").classList.add("hidden"); actCB = null; }
+function confirmAct() { if (actCB) actCB(document.getElementById("act-note").value); closeAct(); }
+
+// ═══════════════════ CONFIRMATION ═══════════════════
+function showConf(type) {
+  var msg = rndMsg(type);
+  document.getElementById("conf-e").textContent = msg.e;
+  document.getElementById("conf-t").textContent = msg.t;
+  document.getElementById("conf-b").textContent = msg.b;
+  var ov = document.getElementById("conf-ov");
+  ov.classList.remove("hidden");
+  requestAnimationFrame(function(){ ov.classList.add("show"); });
+}
+function closeConf() {
+  var ov = document.getElementById("conf-ov");
+  ov.classList.remove("show");
+  setTimeout(function(){ ov.classList.add("hidden"); }, 300);
+}
+
+// ═══════════════════ EDIT DAY ═══════════════════
+var editDate = null;
+function openEditDay(date) {
+  var d = new Date(date + "T12:00:00");
+  if (d.getDay() === 5 || d.getDay() === 6) { showToast("لا تعديل في أيام العطلة"); return; }
+  editDate = date;
+  var data = gd(), rec = data.find(function(r){ return r.date === date; }) || {date:date, checkIn:"", checkOut:"", latePermission:null, departurePermission:null, permissionTaken:false};
+  document.getElementById("edit-sub").textContent = d.getDate() + " " + AM[d.getMonth()] + " " + d.getFullYear();
+  document.getElementById("edit-ci").value = rec.checkIn || "";
+  document.getElementById("edit-co").value = rec.checkOut || "";
+  var perm = rec.latePermission || rec.departurePermission, pt = rec.latePermission ? "late" : rec.departurePermission ? "dep" : "";
+  document.getElementById("edit-pt").value = pt;
+  document.getElementById("edit-pdur").value = perm ? perm.duration : "";
+  document.getElementById("edit-pnote").value = perm ? perm.note : "";
+  document.getElementById("edit-pf").style.display = pt ? "block" : "none";
+  document.getElementById("edit-ov").classList.remove("hidden");
+}
+function onPtChange() { document.getElementById("edit-pf").style.display = document.getElementById("edit-pt").value ? "block" : "none"; }
+function closeEdit() { document.getElementById("edit-ov").classList.add("hidden"); editDate = null; }
+function saveEdit() {
+  var ci = document.getElementById("edit-ci").value, co = document.getElementById("edit-co").value;
+  var pt = document.getElementById("edit-pt").value, pdur = parseInt(document.getElementById("edit-pdur").value) || 0;
+  var pnote = document.getElementById("edit-pnote").value;
+  if (!ci) { showToast("وقت الدخول مطلوب"); return; }
+  var rec = {date:editDate, checkIn:ci, checkOut:co||null, latePermission:null, departurePermission:null, permissionTaken:false};
+  if (pt === "late" && pdur > 0) rec.latePermission = {duration:pdur, note:pnote, acknowledged:true};
+  if (pt === "dep" && pdur > 0) { rec.departurePermission = {duration:pdur, takenAt:co||ci, note:pnote, acknowledged:true}; rec.permissionTaken = true; }
+  upr(rec); closeEdit(); lastSt = null; showToast("تم الحفظ ✓"); renderHome(); renderHistory(); renderPerms();
+}
+function delDay() {
+  if (!editDate) return;
+  delR(editDate); closeEdit(); lastSt = null; showToast("تم الحذف"); renderHome(); renderHistory(); renderPerms();
+}
+
+// ═══════════════════ PERMISSIONS TAB ═══════════════════
+var pY = new Date().getFullYear(), pM = new Date().getMonth();
+function pprev() { pM--; if (pM < 0) { pM = 11; pY--; } renderPerms(); }
+function pnext() { pM++; if (pM > 11) { pM = 0; pY++; } renderPerms(); }
+function renderPerms() {
+  document.getElementById("pm-title").textContent = AM[pM] + " " + pY;
+  var mk = pY + "-" + p2(pM+1);
+  var data = gd().filter(function(r){ return r.date.indexOf(mk) === 0 && (r.latePermission || r.departurePermission); }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+  var total = data.reduce(function(s,r){ return s + (r.latePermission?r.latePermission.duration:0) + (r.departurePermission?r.departurePermission.duration:0); }, 0);
+  var bar = document.getElementById("pm-bar");
+  if (total > 0) {
+    bar.style.display = "block";
+    var pct = Math.min(100, (total/420)*100);
+    document.getElementById("pm-val").textContent = fmtD(total) + " من أصل 7 ساعات";
+    var fill = document.getElementById("pm-fill"); fill.style.width = pct + "%"; fill.className = "mo-fill" + (pct>=80?" danger":"");
+  } else bar.style.display = "none";
+  var list = document.getElementById("perm-list");
+  if (!data.length) { list.innerHTML = '<div class="no-items"><div class="ni">📋</div><p>لا توجد إذونات هذا الشهر</p></div>'; return; }
+  list.innerHTML = data.map(function(r){
+    var p = r.latePermission || r.departurePermission, isL = !!r.latePermission, d = new Date(r.date+"T12:00:00"), dl = AD[d.getDay()] + "، " + d.getDate() + " " + AM[d.getMonth()];
+    return '<div class="perm-card ani" data-date="' + r.date + '"><div class="pci ' + (isL?"late":"dep") + '">' + (isL?"🕐":"📝") + '</div><div class="pci-info"><div class="pci-date">' + dl + '</div><div class="pci-type ' + (isL?"late":"dep") + '">' + (isL?"إذن حضور متأخر":"إذن انصراف") + '</div>' + (p.note?'<div class="pci-note">'+p.note+'</div>':"") + '<div class="pci-status ' + (p.acknowledged?"ok":"warn") + '">' + (p.acknowledged?"✓ مُسجَّل رسمياً":"⚠️ لم يُسجَّل بعد") + '</div></div><div class="pci-dur">' + fmtD(p.duration) + '</div></div>';
+  }).join("");
+  // attach click handlers
+  list.querySelectorAll(".perm-card").forEach(function(el){
+    el.onclick = function(){ openEditDay(this.getAttribute("data-date")); };
+  });
+}
+
+// ═══════════════════ HISTORY TAB ═══════════════════
+var hY = new Date().getFullYear(), hM = new Date().getMonth();
+function hprev() { hM--; if (hM < 0) { hM = 11; hY--; } renderHistory(); }
+function hnext() { hM++; if (hM > 11) { hM = 0; hY++; } renderHistory(); }
+function renderHistory() { document.getElementById("hm-title").textContent = AM[hM] + " " + hY; renderCal(); renderTable(); }
+function renderCal() {
+  var data = gd(), tStr = ld(), DH = ["أح","إث","ثل","أر","خم","جم","سب"];
+  var h = DH.map(function(d,i){ return '<div class="cal-dh' + (i>=5?" wknd":"") + '">' + d + '</div>'; }).join("");
+  var first = new Date(hY, hM, 1), last = new Date(hY, hM+1, 0);
+  for (var i = 0; i < first.getDay(); i++) h += '<div class="cal-d"></div>';
+  for (var d = 1; d <= last.getDate(); d++) {
+    var ds = hY + "-" + p2(hM+1) + "-" + p2(d), dateObj = new Date(hY,hM,d), dow = dateObj.getDay(), isW = dow===5||dow===6;
+    var rec = data.find(function(r){ return r.date === ds; });
+    var cls = "cal-d", dot = "";
+    if (isW) cls += " wknd-d";
+    if (ds === tStr) cls += " today";
+    if (rec && !isW) {
+      if (rec.latePermission || rec.departurePermission) { cls += " hasperm"; dot = '<div class="cal-dot b"></div>'; }
+      else if (rec.checkOut) { cls += " full"; dot = '<div class="cal-dot g"></div>'; }
+      else cls += " hasr";
+    }
+    h += '<div class="' + cls + '" data-date="' + ds + '">' + d + dot + '</div>';
+  }
+  var grid = document.getElementById("cal-grid"); grid.innerHTML = h;
+  grid.querySelectorAll(".cal-d:not(.wknd-d)").forEach(function(el){
+    el.onclick = function(){ openEditDay(this.getAttribute("data-date")); };
+  });
+}
+function renderTable() {
+  var mk = hY + "-" + p2(hM+1), data = gd().filter(function(r){ return r.date.indexOf(mk)===0; }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+  var tbody = document.getElementById("hist-body");
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:24px;font-weight:600">لا توجد سجلات</td></tr>'; return; }
+  tbody.innerHTML = data.map(function(r){
+    var p = r.latePermission || r.departurePermission, pb = p ? '<span class="pb ' + (r.latePermission?"l":"d") + '">' + (r.latePermission?"حضور":"انصراف") + '</span>' : "—";
+    var d = new Date(r.date+"T12:00:00"), dl = d.getDate() + " " + AM[d.getMonth()], dur = (r.checkIn&&r.checkOut) ? fmtD(mBetween(r.checkIn,r.checkOut)) : "—";
+    return '<tr data-date="' + r.date + '"><td class="dc">' + dl + '</td><td class="tc">' + (r.checkIn||"—") + '</td><td class="tc">' + (r.checkOut||"—") + '</td><td>' + dur + '</td><td>' + pb + '</td></tr>';
+  }).join("");
+  tbody.querySelectorAll("tr[data-date]").forEach(function(el){
+    el.onclick = function(){ openEditDay(this.getAttribute("data-date")); };
+  });
+}
+
+// ═══════════════════ EXCEL ═══════════════════
+function exportExcel() {
+  if (typeof XLSX === "undefined") { showToast("Excel غير متاح"); return; }
+  var mk = hY + "-" + p2(hM+1), data = gd().filter(function(r){ return r.date.indexOf(mk)===0; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var rows = [["التاريخ","وقت الدخول","وقت الخروج","المدة (دقيقة)","نوع الإذن","مدة الإذن (دقيقة)","الملاحظة","حالة التسجيل"]];
+  data.forEach(function(r){
+    var p = r.latePermission || r.departurePermission, dur = (r.checkIn&&r.checkOut) ? mBetween(r.checkIn,r.checkOut) : "";
+    rows.push([r.date, r.checkIn||"", r.checkOut||"", dur, r.latePermission?"إذن حضور":r.departurePermission?"إذن انصراف":"", p?p.duration:"", p?p.note:"", p?(p.acknowledged?"مُسجَّل":"لم يُسجَّل"):"-"]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = [12,10,10,14,14,14,18,12].map(function(w){ return {wch:w}; });
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, AM[hM]+" "+hY);
+  XLSX.writeFile(wb, "حضور_" + mk + ".xlsx"); showToast("تم تصدير Excel ✓");
+}
+
+// ═══════════════════ NAV ═══════════════════
+function switchTab(tab) {
+  document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+  document.querySelectorAll(".nav-btn").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById("screen-" + tab).classList.add("active");
+  document.getElementById("nav-" + tab).classList.add("active");
+  if (tab === "hist") renderHistory();
+  if (tab === "perms") renderPerms();
+  if (tab === "home") renderHome();
+}
+
+// ═══════════════════ TOAST ═══════════════════
+var toastT;
+function showToast(msg) {
+  var el = document.getElementById("toast"); el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(function(){ el.classList.remove("show"); }, 2600);
+}
+
+
+// Wrapper functions - avoids quote nesting in onclick attributes
+function tabHome() { switchTab("home"); }
+function tabPerms() { switchTab("perms"); }
+function tabHist() { switchTab("hist"); }
+function qteCI() { openQTE("ci"); }
+function qteCO() { openQTE("co"); }
+
+// ═══════════════════ INIT ═══════════════════
+document.addEventListener("DOMContentLoaded", function(){
+  applyTheme(); renderHome(); startClock(); lastSt = getState();
+  var lt2 = 0;
+  document.addEventListener("touchend", function(e){ var n = Date.now(); if (n-lt2 < 300) e.preventDefault(); lt2 = n; }, {passive:false});
+});
+</script>
+</body>
+</html>
