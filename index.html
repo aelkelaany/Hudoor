@@ -231,10 +231,6 @@ textarea:focus,.tinp:focus{border-color:var(--c1);box-shadow:0 0 0 3px rgba(78,2
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
   </div>
   <div class="main-content">
-    <div>١. ارفع الملف على <strong style="color:var(--text)">netlify.com/drop</strong></div>
-    <div>٢. افتح الرابط على Chrome موبايل</div>
-    <div>٣. اضغط ⋮ ← <strong style="color:var(--text)">Add to Home Screen</strong></div>
-  </div>
     <div id="screen-home" class="screen active"><div class="home-screen" id="hc"></div></div>
     <div id="screen-perms" class="screen perms-screen">
       <div class="screen-title">سجل الإذونات</div>
@@ -603,7 +599,7 @@ function renderHome() {
     h += '<div class="chips ani"><div class="chip" onclick="qteCI()"><div class="chip-lbl">⏰ وقت الدخول</div><div class="chip-val">' + t.checkIn + '</div><div class="chip-hint">✏️ اضغط للتعديل</div></div><div class="chip"><div class="chip-lbl">🏁 انتهاء الدوام</div><div class="chip-val">' + eOut + '</div></div></div>';
     h += '<div class="cntd-wrap ani"><div class="cntd-lbl">المتبقي على انتهاء الدوام</div><div class="cntd-el' + (rem3<=60?" warn":"") + (rem3===0?" done":"") + '" id="cntd-el">' + Math.floor(rem3/60) + ":" + p2(rem3%60) + '</div><div class="cntd-sub">' + (rem3===0 ? "اكتملت ساعات الدوام ✓" : fmtD(el3) + " منجزة من أصل 8 ساعات") + '</div><div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:' + pct3 + '%"></div></div></div>';
     if (!t.departurePermission && state === "working") {
-      h += '<button class="btn btn-blue ani" onclick="doDepPerm()"><span>📝</span><span>طلب إذن انصراف</span></button>';
+      h += '<button class="btn btn-blue ani" onclick="doDepPerm()" style="margin-top:4px"><span>📝</span><span>طلب إذن انصراف</span></button>';
     }
     if (state === "departure_ready") {
       h += '<button class="btn btn-red ani" onclick="doCO()"><span>🏠</span><span>تسجيل الانصراف</span></button>';
@@ -959,6 +955,9 @@ window.addEventListener("appinstalled", function() {
   closeInst();
 });
 function openInst() {
+  // If already installed as PWA, don't show install modal
+  var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  if (isStandalone) { showToast("التطبيق مثبّت بالفعل ✓"); return; }
   var ua = navigator.userAgent;
   var isIOS = /iPhone|iPad|iPod/i.test(ua);
   var isAndroid = /Android/i.test(ua);
@@ -982,6 +981,12 @@ function triggerInstall() {
 // ═══════════════════ INIT ═══════════════════
 document.addEventListener("DOMContentLoaded", function(){
   applyTheme(); initPWA(); renderHome(); startClock(); lastSt = getState();
+  // Hide install button if already running as installed app
+  var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  if (isStandalone) {
+    var instBtn = document.querySelector('[onclick="openInst()"]');
+    if (instBtn) instBtn.style.display = "none";
+  }
 
   var lt2 = 0;
   document.addEventListener("touchend", function(e){ var n = Date.now(); if (n-lt2 < 300) e.preventDefault(); lt2 = n; }, {passive:false});
